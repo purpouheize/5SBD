@@ -1,0 +1,14 @@
+    import pandas as pd
+    import sqlite3
+
+    dados = pd.read_csv('materias.csv')
+
+    dados['Período'] = dados['Período'].astype(int)
+    dados = dados[dados['Período'] == 3]
+
+    conn = sqlite3.connect('classes.db')
+
+    dados.to_sql('materia', conn, if_exists='append', index=False)
+
+    conn.commit()
+    conn.close()
