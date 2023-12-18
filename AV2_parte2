@@ -1,0 +1,69 @@
+//
+from flask import Flask, jsonify, request
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class Materia(Base):
+    __tablename__ = 'materia'
+    id = Column(Integer, primary_key=True)
+    nome = Column(String)
+    professor = Column(String)
+    periodo = Column(Integer)
+
+    def __repr__(self):
+        return f"<Materia(nome='{self.nome}', professor='{self.professor}', periodo={self.periodo})>"
+
+engine = create_engine('sqlite:///classes.db')
+Base.metadata.create_all(engine)
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+app = Flask(__name__)
+
+@app.route('/materia', methods=['GET'])
+def get_materias():
+    materias = session.query(Materia).all()
+    return jsonify([materia.__dict__ for materia in materias])
+
+@app.route('/materia/<int:id>', methods=['GET'])
+def get_materia(id):
+    materia = session.query(Materia).filter_by(id=id).first()
+    if materia is None:
+        return jsonify({'error': 'Materia não encontrada'}), 404
+    return jsonify(materia.__dict__)
+
+@app.route('/materia', methods=['POST'])
+def insert_materia():
+    data = request.json
+    materia = Materia(nome=data['nome'], professor=data['professor'], periodo=data['periodo'])
+    session.add(materia)
+    session.commit()
+    return jsonify(materia.__dict__)
+
+@app.route('/materia/<int:id>', methods=['PUT'])
+def update_materia(id):
+    data = request.json
+    materia = session.query(Materia).filter_by(id=id).first()
+    if materia is None:
+        return jsonify({'error': 'Materia não encontrada'}), 404
+    materia.nome = data['nome']
+    materia.professor = data['professor']
+    materia.periodo = data['periodo']
+    session.commit()
+    return jsonify(materia.__dict__)
+
+@app.route('/materia/<int:id>', methods=['DELETE'])
+def delete_materia(id):
+    materia = session.query(Materia).filter_by(id=id).first()
+    if materia is None:
+        return jsonify({'error': 'Materia não encontrada'}), 404
+    session.delete(materia)
+    session.commit()
+    return jsonify({'message': 'Materia excluída com sucesso'})
+
+if __name__ == '__main__':
+    app.run()
