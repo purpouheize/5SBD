@@ -1,0 +1,34 @@
+import pandas as pd
+import sqlite3
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class Materia(Base):
+    __tablename__ = 'materia'
+    id = Column(Integer, primary_key=True)
+    nome = Column(String)
+    professor = Column(String)
+    periodo = Column(Integer)
+
+    def __repr__(self):
+        return f"<Materia(nome='{self.nome}', professor='{self.professor}', periodo={self.periodo})>"
+
+engine = create_engine('sqlite:///classes.db')
+Base.metadata.create_all(engine)
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+dados = pd.read_csv('materias.csv')
+dados['Período'] = dados['Período'].astype(int)
+dados = dados[dados['Período'] == 3]
+
+for _, row in dados.iterrows():
+    materia = Materia(nome=row['Nome'], professor=row['Professor'], periodo=row['Período'])
+    session.add(materia)
+
+session.commit()
+session.close()
